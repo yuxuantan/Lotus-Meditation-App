@@ -1,168 +1,257 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
-  Text,
   View,
   ImageBackground,
   TouchableOpacity,
-  Picker,
 } from "react-native";
-import MyBtn from "../components/MyBtn";
-import MySmallBtn from "../components/MySmallBtn";
-import BackArrBtn from "../components/BackArrBtn";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import * as WheelPicker from "react-native-picker-js";
 
-// Just to test picker
+import AsyncStorage from "@react-native-community/async-storage";
+import ModalDropdown from "react-native-modal-dropdown";
+import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+
 import colors from "../config/colors";
+import AppText from "../components/AppText";
 
 export default function SettingScreen() {
   //to get id from params - const route = useRoute();
   const navigation = useNavigation();
-  //initialize to 5 . Hooks to persist state in function
-  const [hour, setHour] = useState(0);
-  const [minute, setMinute] = useState(0);
-  const [second, setSecond] = useState(0);
+  const [ambient, setAmbient] = useState("forest");
+  const [minute, setMinute] = useState(15);
+  const [sound, setSound] = useState("gong");
+  const [interval, setInterval] = useState("off"); // on would sound the gong every 5 mins
 
-  const [ambient, setAmbient] = useState("Forest");
-  const [gongSound, setGongSound] = useState("Gong");
-  const [gongInterval, setGongInterval] = useState("Off"); // on would sound the gong every 5 mins
-  function _showDatePicker() {
-    WheelPicker.init({
-      pickerData: [1, 2, 3, 4],
-      pickerFontColor: [255, 0, 0, 1],
-      onPickerConfirm: (pickedValue, pickedIndex) => {
-        console.log("date", pickedValue, pickedIndex);
-      },
-      onPickerCancel: (pickedValue, pickedIndex) => {
-        console.log("date", pickedValue, pickedIndex);
-      },
-      onPickerSelect: (pickedValue, pickedIndex) => {
-        console.log("date", pickedValue, pickedIndex);
-      },
-    });
-    WheelPicker.show();
-  }
+  const saveData = async () => {
+    try {
+      await AsyncStorage.setItem("minute", "" + minute);
+      await AsyncStorage.setItem("sound", "" + sound);
+      await AsyncStorage.setItem("interval", "" + interval);
+    } catch (e) {
+      alert("Failed to save the data to the storage");
+    }
+  };
+
+  const getData = async () => {
+    try {
+      const value1 = await AsyncStorage.getItem("minute");
+      const value2 = await AsyncStorage.getItem("sound");
+      const value3 = await AsyncStorage.getItem("interval");
+
+      if (value1 !== null) {
+        // value previously stored
+        setMinute(value1);
+      }
+      if (value2 !== null) {
+        setSound(value2);
+      }
+      if (value3 !== null) {
+        setInterval(value3);
+      }
+    } catch (e) {
+      // error reading value
+    }
+  };
+
+  useEffect(() => {
+    getData();
+  }, []);
+
   return (
     <ImageBackground
-      blurRadius={2}
       style={styles.background}
-      source={require("../assets/forest-background.jpg")}
+      source={require("../assets/bg_home.png")}
     >
       <View style={styles.btnContainer}>
-        {/* to get id from params */}
-        {/* <Text>{route.params.id}</Text> */}
         {/* SELECT Ambient */}
-        <View style={[styles.btn, { backgroundColor: colors.secondary }]}>
-          <Text style={styles.text}>Ambient: </Text>
-          <Text style={styles.text}>{ambient}</Text>
-          <Picker
-            mode="dropdown"
-            style={styles.picker}
-            onValueChange={(itemValue, itemIndex) => setAmbient(itemValue)}
+        <AppText style={styles.textLabel}>Ambient</AppText>
+        <ModalDropdown
+          style={styles.btn}
+          dropdownStyle={[styles.option, { height: 168 }]}
+          dropdownTextStyle={styles.optionText}
+          options={["forest", "river", "city", "space"]}
+          onSelect={(idx, value) => setAmbient(value)}
+          dropdownTextHighlightStyle={{ fontWeight: "400" }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View
+            style={{
+              width: 140,
+              height: 40,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
           >
-            <Picker.Item label="Forest" value="Forest" />
-            <Picker.Item label="Mountain" value="Mountain" />
-            <Picker.Item label="Waterfall" value="Waterfall" />
-          </Picker>
-        </View>
-        {/* SELECT TIME */}
-        <TouchableOpacity
-          style={[styles.btn, { backgroundColor: colors.secondary }]}
-          onPress={_showDatePicker()}
-        ></TouchableOpacity>
-        {/* SELECT GOng sound */}
-        <View style={[styles.btn, { backgroundColor: colors.secondary }]}>
-          <Text style={styles.text}>Gong sound: </Text>
-          <Text style={styles.text}>{gongSound}</Text>
-          <Picker
-            mode="dropdown"
-            selectedValue={gongSound}
-            style={styles.picker}
-            onValueChange={(itemValue, itemIndex) => setGongSound(itemValue)}
-          >
-            <Picker.Item label="Gong" value="Gong" />
-            <Picker.Item label="Singing Bowl" value="Singing Bowl" />
-            <Picker.Item label="Bell" value="Bell" />
-          </Picker>
-        </View>
-        {/* SELECT Gong interval */}
-        <View style={[styles.btn, { backgroundColor: colors.secondary }]}>
-          <Text style={styles.text}>Gong Interval: </Text>
-          <Text style={styles.text}>{gongInterval}</Text>
-          <Picker
-            mode="dropdown"
-            selectedValue={gongInterval}
-            style={styles.picker}
-            onValueChange={(itemValue, itemIndex) => setGongInterval(itemValue)}
-          >
-            <Picker.Item label="Off" value="Off" />
-            <Picker.Item label="On" value="On" />
-          </Picker>
-        </View>
+            <Ionicons
+              name="ios-arrow-down"
+              size={18}
+              style={{ position: "absolute", right: 10, color: "white" }}
+              color="black"
+            />
+            <AppText style={styles.text}>{ambient}</AppText>
+          </View>
+        </ModalDropdown>
 
-        <MyBtn
-          style={styles.lastBtn}
-          title="Start"
-          //Time in seconds
-          onPress={() =>
+        {/* SELECT TIME */}
+        <AppText style={styles.textLabel}>Total Time (mins)</AppText>
+        <ModalDropdown
+          style={styles.btn}
+          dropdownStyle={[styles.option, { height: 168 }]}
+          dropdownTextStyle={styles.optionText}
+          options={[15, 30, 45, 60]}
+          onSelect={(idx, value) => setMinute(value)}
+          dropdownTextHighlightStyle={{ fontWeight: "400" }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View
+            style={{
+              width: 140,
+              height: 40,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons
+              name="ios-arrow-down"
+              size={18}
+              style={{ position: "absolute", right: 10, color: "white" }}
+              color="black"
+            />
+            <AppText style={styles.text}>{minute}:00</AppText>
+          </View>
+        </ModalDropdown>
+        {/* SELECT GOng sound */}
+        <AppText style={styles.textLabel}>Sound</AppText>
+        <ModalDropdown
+          style={styles.btn}
+          dropdownStyle={[styles.option, { height: 126 }]}
+          dropdownTextStyle={styles.optionText}
+          options={["gong", "bell", "bowl"]}
+          onSelect={(idx, value) => setSound(value)}
+          dropdownTextHighlightStyle={{ fontWeight: "400" }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View
+            style={{
+              width: 140,
+              height: 40,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons
+              name="ios-arrow-down"
+              size={18}
+              style={{ position: "absolute", right: 10, color: "white" }}
+              color="black"
+            />
+            <AppText style={styles.text}>{sound}</AppText>
+          </View>
+        </ModalDropdown>
+        {/* SELECT Gong interval */}
+        <AppText style={styles.textLabel}>Interval (mins)</AppText>
+        <ModalDropdown
+          style={styles.btn}
+          dropdownStyle={[styles.option, { height: 210 }]}
+          dropdownTextStyle={styles.optionText}
+          options={[1, 5, 10, 15, "off"]}
+          onSelect={(idx, value) => setInterval(value)}
+          dropdownTextHighlightStyle={{ fontWeight: "400" }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View
+            style={{
+              width: 140,
+              height: 40,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons
+              name="ios-arrow-down"
+              size={18}
+              style={{ position: "absolute", right: 10, color: "white" }}
+              color="black"
+            />
+            <AppText style={styles.text}>{interval}</AppText>
+          </View>
+        </ModalDropdown>
+
+        {/* Start btn */}
+        <TouchableOpacity
+          style={styles.startBtn}
+          onPress={() => {
+            saveData();
             navigation.navigate("InProgress", {
-              time: hour * 60 * 60 + minute * 60 + second,
-              ambient: ambient,
-              gongInterval: gongInterval,
-              gongSound: gongSound,
-            })
-          }
-        />
+              minute: minute,
+              sound: sound,
+              interval: interval,
+            });
+          }}
+        >
+          <AppText style={styles.startText}>Start</AppText>
+        </TouchableOpacity>
       </View>
-      <BackArrBtn
-        style={styles.backArr}
-        onPress={() => navigation.goBack()}
-      ></BackArrBtn>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  // FOR picker
-  btn: {
-    width: "75%",
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: "center",
+  startBtn: {
+    borderRadius: 30,
+    backgroundColor: colors.white,
+    marginHorizontal: 18,
+    paddingVertical: 12,
+    marginTop: 30,
     justifyContent: "center",
-    flexDirection: "row",
+    alignItems: "center",
+  },
+  btn: {
+    borderRadius: 5,
+    backgroundColor: colors.black,
+    width: 140,
+    height: 40,
+    marginBottom: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
   text: {
-    color: colors.black,
-    fontSize: 24,
+    color: colors.white,
+    fontSize: 16,
     fontWeight: "500",
-    // position: "absolute",
+    textTransform: "uppercase",
   },
-  picker: {
-    height: "100%",
-    width: "100%",
-    color: "#FFF0",
-    position: "absolute",
+  startText: {
+    color: "grey",
+    fontSize: 18,
+    fontWeight: "500",
+    textTransform: "uppercase",
   },
-  //
+  textLabel: {
+    color: colors.black,
+    fontSize: 12,
+    fontWeight: "300",
+    textTransform: "uppercase",
+  },
+
   background: {
     flex: 1,
-  },
-  btnContainer: {
-    paddingVertical: 100,
-    width: "100%",
-    height: "100%",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
   },
-  lastBtn: {
-    marginTop: 20,
+
+  option: {
+    marginTop: -20,
+    width: 140,
+    borderRadius: 5,
+    // justifyContent: "center",
+    // alignItems: "center",
   },
-  backArr: {
-    position: "absolute",
-    left: 40,
-    bottom: 20,
+  optionText: {
+    fontSize: 16,
+    width: 140,
+    fontWeight: "300",
+    textTransform: "uppercase",
+    textAlign: "center",
   },
 });

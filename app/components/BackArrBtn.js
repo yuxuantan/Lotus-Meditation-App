@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 export default function MyBtn({ onPress, style }) {
   return (
     <TouchableOpacity style={style} onPress={onPress}>
-      <Ionicons name="md-arrow-back" size={48} color="white" />
+      <Ionicons name="md-arrow-back" size={48} color="black" />
     </TouchableOpacity>
   );
 }

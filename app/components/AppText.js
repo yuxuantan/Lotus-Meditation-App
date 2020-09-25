@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     // color: "tomato",
     ...Platform.select({
       ios: {
-        fotSize: 20,
+        fontSize: 20,
         fontFamily: "Avenir",
       },
       android: {
