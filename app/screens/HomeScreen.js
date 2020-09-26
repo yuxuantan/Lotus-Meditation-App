@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+// import AsyncStorage from "@react-native-community/async-storage";
+import { AntDesign } from "@expo/vector-icons";
+
 import AppText from "../components/AppText";
 import colors from "../config/colors";
 
@@ -24,8 +27,6 @@ export default function HomeScreen() {
       ></Image>
 
       <TouchableOpacity
-        // to pass params to navigation
-        // onPress={() => navigation.navigate("Setting", { id: 10 })}
         style={styles.startBtn}
         onPress={() => navigation.navigate("Setting")}
       >
@@ -39,8 +40,18 @@ export default function HomeScreen() {
         Journey Today
       </AppText>
 
-      <TouchableOpacity style={[styles.btn, { marginBottom: 25 }]}>
+      {/* To switch to touchable opacity */}
+      <TouchableOpacity
+        style={[styles.btn, { marginBottom: 25, paddingHorizontal: 30 }]}
+        onPress={() => alert("This feature is not ready.")}
+      >
         <AppText style={styles.text}>Premium</AppText>
+        <AntDesign
+          name="lock"
+          size={18}
+          style={{ position: "absolute", right: 8, top: 9, color: "black" }}
+          color="black"
+        />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -49,6 +60,42 @@ export default function HomeScreen() {
       >
         <AppText style={styles.text}>Achievements</AppText>
       </TouchableOpacity>
+
+      {/* FOR TESTING - reset data */}
+      {/* <TouchableOpacity
+        style={styles.btn}
+        onPress={async () => {
+          var date = new Date();
+          console.log("today:", date);
+          // date.setDate(date.getDate() - 1);
+          // console.log("new date:", date);
+          try {
+            AsyncStorage.clear();
+
+            // await AsyncStorage.setItem("currentStreak", "3");
+            // await AsyncStorage.setItem("longestStreak", "5");
+            // convert date
+            // var d = new Date(date),
+            //   month = "" + (d.getMonth() + 1),
+            //   day = "" + (d.getDate() - 1),
+            //   year = d.getFullYear();
+
+            // if (month.length < 2) month = "0" + month;
+            // if (day.length < 2) day = "0" + day;
+
+            // var dateStr = [year, month, day].join("-");
+
+            // AsyncStorage.setItem("lastDate", dateStr);
+
+            alert("reset success");
+            // console.log("stored:", await AsyncStorage.getItem("lastDate"));
+          } catch (e) {
+            alert(e);
+          }
+        }}
+      >
+        <AppText style={styles.text}>RESET DATA AND SET LAST DATE</AppText>
+      </TouchableOpacity> */}
     </ImageBackground>
   );
 }

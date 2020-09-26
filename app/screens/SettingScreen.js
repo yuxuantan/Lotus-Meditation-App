@@ -9,7 +9,7 @@ import {
 import AsyncStorage from "@react-native-community/async-storage";
 import ModalDropdown from "react-native-modal-dropdown";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 
 import colors from "../config/colors";
 import AppText from "../components/AppText";
@@ -40,7 +40,7 @@ export default function SettingScreen() {
 
       if (value1 !== null) {
         // value previously stored
-        setMinute(value1);
+        setMinute(parseInt(value1));
       }
       if (value2 !== null) {
         setSound(value2);
@@ -63,7 +63,7 @@ export default function SettingScreen() {
       source={require("../assets/bg_home.png")}
     >
       <View style={styles.btnContainer}>
-        {/* SELECT Ambient */}
+        {/* SELECT Ambient -- FUTURE FEATURE */}
         <AppText style={styles.textLabel}>Ambient</AppText>
         <ModalDropdown
           style={styles.btn}
@@ -73,19 +73,27 @@ export default function SettingScreen() {
           onSelect={(idx, value) => setAmbient(value)}
           dropdownTextHighlightStyle={{ fontWeight: "400" }}
           showsVerticalScrollIndicator={false}
+          disabled={true} //  to remove this once ready
         >
           <View
             style={{
-              width: 140,
+              width: 150,
               height: 40,
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <Ionicons
+            {/* <Ionicons
               name="ios-arrow-down"
               size={18}
               style={{ position: "absolute", right: 10, color: "white" }}
+              color="black"
+            /> */}
+            {/*  To switch this for arrow once ready */}
+            <AntDesign
+              name="lock"
+              size={18}
+              style={{ position: "absolute", right: 5, color: "white" }}
               color="black"
             />
             <AppText style={styles.text}>{ambient}</AppText>
@@ -105,7 +113,7 @@ export default function SettingScreen() {
         >
           <View
             style={{
-              width: 140,
+              width: 150,
               height: 40,
               justifyContent: "center",
               alignItems: "center",
@@ -133,7 +141,7 @@ export default function SettingScreen() {
         >
           <View
             style={{
-              width: 140,
+              width: 150,
               height: 40,
               justifyContent: "center",
               alignItems: "center",
@@ -149,7 +157,7 @@ export default function SettingScreen() {
           </View>
         </ModalDropdown>
         {/* SELECT Gong interval */}
-        <AppText style={styles.textLabel}>Interval (mins)</AppText>
+        <AppText style={styles.textLabel}>Interval Sound (mins)</AppText>
         <ModalDropdown
           style={styles.btn}
           dropdownStyle={[styles.option, { height: 210 }]}
@@ -161,7 +169,7 @@ export default function SettingScreen() {
         >
           <View
             style={{
-              width: 140,
+              width: 150,
               height: 40,
               justifyContent: "center",
               alignItems: "center",
@@ -209,9 +217,9 @@ const styles = StyleSheet.create({
   btn: {
     borderRadius: 5,
     backgroundColor: colors.black,
-    width: 140,
+    width: 150,
     height: 40,
-    marginBottom: 40,
+    marginBottom: 40, //  change this when more btns
     justifyContent: "center",
     alignItems: "center",
   },
@@ -242,14 +250,14 @@ const styles = StyleSheet.create({
 
   option: {
     marginTop: -20,
-    width: 140,
+    width: 150,
     borderRadius: 5,
     // justifyContent: "center",
     // alignItems: "center",
   },
   optionText: {
     fontSize: 16,
-    width: 140,
+    width: 150,
     fontWeight: "300",
     textTransform: "uppercase",
     textAlign: "center",
