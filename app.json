@@ -4,7 +4,7 @@
     "slug": "lotus",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/icon_lotus.png",
+    "icon": "./app/assets/lotus_icon.png",
     "splash": {
       "image": "./app/assets/splash.png",
       "resizeMode": "contain",
@@ -13,9 +13,12 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.xuanzzz.lotus"
     },
     "android": {
       "package": "com.xuanzzz.lotus",
@@ -25,6 +28,12 @@
       "favicon": "./app/assets/favicon.png"
     },
     "description": "",
-    "githubUrl": "https://github.com/yuxuantan/Lotus-Meditation-App"
+    "githubUrl": "https://github.com/yuxuantan/Lotus-Meditation-App",
+    "sdkVersion": "38.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ]
   }
 }

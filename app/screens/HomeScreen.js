@@ -24,7 +24,7 @@ export default function HomeScreen() {
     >
       <Image
         source={require("../assets/logo.png")}
-        style={{ marginBottom: 40 }}
+        style={{ resizeMode: "center" }}
       ></Image>
 
       <TouchableOpacity
@@ -34,10 +34,10 @@ export default function HomeScreen() {
         <AppText style={styles.startText}>Start</AppText>
       </TouchableOpacity>
 
-      <AppText style={[styles.text, { marginBottom: 3 }]}>
+      <AppText style={[styles.text, { marginBottom: 3, color: "black" }]}>
         Your Meditation
       </AppText>
-      <AppText style={[styles.text, { marginBottom: 90 }]}>
+      <AppText style={[styles.text, { marginBottom: 90, color: "black" }]}>
         Journey Today
       </AppText>
 
@@ -45,6 +45,7 @@ export default function HomeScreen() {
       <TouchableOpacity
         style={[styles.btn, { marginBottom: 25, paddingHorizontal: 30 }]}
         onPress={() => alert("This feature is not ready.")}
+        // onPress={() => navigation.navigate("Donations")}
       >
         <AppText style={styles.text}>Donate</AppText>
         <AntDesign

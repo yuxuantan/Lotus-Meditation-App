@@ -4,6 +4,7 @@ import HomeScreen from "./app/screens/HomeScreen";
 import SettingScreen from "./app/screens/SettingScreen";
 import InProgressScreen from "./app/screens/InProgressScreen";
 import AchievementsScreen from "./app/screens/AchievementsScreen";
+import DonationsScreen from "./app/screens/DonationsScreen";
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
 
@@ -38,6 +39,7 @@ const StackNavigator = () => (
       //options can customize header too
     />
     <Stack.Screen name="Achievements" component={AchievementsScreen} />
+    <Stack.Screen name="Donations" component={DonationsScreen} />
   </Stack.Navigator>
 );
 

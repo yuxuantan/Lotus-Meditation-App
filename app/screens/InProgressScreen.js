@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   BackHandler,
+  Text,
 } from "react-native";
 
 import { AnimatedCircularProgress } from "react-native-circular-progress";
@@ -17,12 +18,20 @@ import {
   useFocusEffect,
 } from "@react-navigation/native";
 import { Audio } from "expo-av";
-import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
+import { useKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-community/async-storage";
 
 import AppText from "../components/AppText";
+import { useFonts } from "expo-font";
+import { AppLoading } from "expo";
 
 export default function InProgressScreen() {
+  let [fontsLoaded] = useFonts({
+    "UniversLTStd-UltraCn": require("../assets/fonts/UniversLTStd-UltraCn.otf"),
+    "UniversLTStd-ThinUltraCn": require("../assets/fonts/UniversLTStd-ThinUltraCn.otf"),
+  });
+
+  useKeepAwake();
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -33,6 +42,7 @@ export default function InProgressScreen() {
   const [ambientPlaybackInstance, setAmbientPlaybackInstance] = useState(null);
 
   var currCount = 0;
+
   useEffect(() => {
     // calculate # lotus to be obtained
     calculateLotus();
@@ -46,9 +56,8 @@ export default function InProgressScreen() {
       interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
       playThroughEarpieceAndroid: false,
     });
-
     // Keep screen awake
-    activateKeepAwake();
+    // activateKeepAwake("asdf");
 
     // load sound obj
     _loadSoundPlaybackInstance(3);
@@ -63,9 +72,9 @@ export default function InProgressScreen() {
 
     // this gets called regardless when exit
     return () => {
-      console.log("return");
+      // console.log("return");
 
-      deactivateKeepAwake();
+      // deactivateKeepAwake("asdf");
 
       if (soundPlaybackInstance != null) {
         soundPlaybackInstance.unloadAsync();
@@ -151,7 +160,7 @@ export default function InProgressScreen() {
     if (playbackStatus.isLooping && playbackStatus.didJustFinish) {
       loopNum += 1;
 
-      console.log(loopNum);
+      // console.log(loopNum);
 
       if (loopNum == 2) {
         soundPlaybackInstance.setIsLoopingAsync(false); //  null!!
@@ -410,51 +419,60 @@ export default function InProgressScreen() {
   };
 
   // ui
-  return (
-    <ImageBackground
-      style={styles.background}
-      source={require("../assets/bg_home.png")}
-    >
-      <AppText style={[styles.text, { marginBottom: 60 }]}>
-        Take a deep breath
-      </AppText>
-      <View style={[styles.innerFrame, { marginBottom: 60 }]}>
-        <CountDown
-          until={route.params.minute * 60}
-          onFinish={() => finishAlert()}
-          size={30}
-          timeToShow={["M", "S"]}
-          timeLabels={{}}
-          digitStyle={{ backgroundColor: "white" }}
-          onChange={() => {
-            currCount += 1;
-            if (
-              route.params.interval != "off" &&
-              currCount % (Number(route.params.interval) * 60) == 0
-            ) {
-              // soundPlaybackInstance.playAsync(); // is not refreshed, because UI. must use hook if use AI
-              // TO FIX - finish alert not used either. so I need to use hook
-              _loadSoundPlaybackInstance(1);
-            }
-          }}
-          showSeparator
-        />
-        <AnimatedCircularProgress
-          easing={Easing.linear}
-          duration={route.params.minute * 60 * 1000}
-          size={200}
-          width={10}
-          fill={100}
-          tintColor="white"
-          backgroundColor="#00000090"
-          style={styles.progressCircle}
-          rotation={180}
+  if (fontsLoaded) {
+    return (
+      <ImageBackground
+        style={styles.background}
+        source={require("../assets/bg_home.png")}
+      >
+        <AppText style={[styles.text, { marginBottom: 60 }]}>
+          Take a deep breath
+        </AppText>
+        <View style={[styles.innerFrame, { marginBottom: 60 }]}>
+          <CountDown
+            until={route.params.minute * 60}
+            onFinish={() => finishAlert()}
+            size={30}
+            timeToShow={["M", "S"]}
+            timeLabels={{}}
+            digitStyle={{
+              // backgroundColor: "#FFFFFF00",
+              width: 57,
+            }}
+            digitTxtStyle={{
+              fontFamily: "sans-serif-thin",
+              color: "black",
+              fontSize: 50,
+            }}
+            onChange={() => {
+              currCount += 1;
+              if (
+                route.params.interval != "off" &&
+                currCount % (Number(route.params.interval) * 60) == 0
+              ) {
+                // soundPlaybackInstance.playAsync(); // is not refreshed, because UI. must use hook if use AI
+                // TO FIX - finish alert not used either. so I need to use hook
+                _loadSoundPlaybackInstance(1);
+              }
+            }}
+            showSeparator
+          />
+          <AnimatedCircularProgress
+            easing={Easing.linear}
+            duration={route.params.minute * 60 * 1000}
+            size={270}
+            width={12}
+            fill={100}
+            tintColor="#FFFFFF"
+            backgroundColor="#00000099"
+            style={styles.progressCircle}
+            rotation={180}
 
-          // lineCap="round"
-        />
+            // lineCap="round"
+          />
 
-        {/* Prep time */}
-        {/* <AnimatedCircularProgress
+          {/* Prep time */}
+          {/* <AnimatedCircularProgress
           easing={Easing.linear}
           duration={route.params.prepTime * 1000}
           size={220}
@@ -466,18 +484,21 @@ export default function InProgressScreen() {
           rotation={180}
           onAnimationComplete={() => soundPlaybackInstance.playAsync()}
         /> */}
-      </View>
+        </View>
 
-      <TouchableOpacity style={styles.btn} onPress={() => endEarly()}>
-        <AppText style={styles.text}>End Session</AppText>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.btn} onPress={() => endEarly()}>
+          <AppText style={styles.text}>End Session</AppText>
+        </TouchableOpacity>
 
-      {/* FOR TESTING ONLY  - simulate finish*/}
-      <TouchableOpacity style={styles.btn} onPress={() => finishAlert()}>
+        {/* FOR TESTING ONLY  - simulate finish*/}
+        {/* <TouchableOpacity style={styles.btn} onPress={() => finishAlert()}>
         <AppText style={styles.text}>Simulate Finish</AppText>
-      </TouchableOpacity>
-    </ImageBackground>
-  );
+      </TouchableOpacity> */}
+      </ImageBackground>
+    );
+  } else {
+    return <AppLoading />;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -495,10 +516,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   innerFrame: {
-    height: 220,
-    width: 220,
-    borderRadius: 110,
-    backgroundColor: "white",
+    height: 300,
+    width: 300,
+    borderRadius: 150,
+    backgroundColor: "#FFFFFF99",
     alignItems: "center",
     justifyContent: "center",
   },
