@@ -16,6 +16,7 @@ import colors from "../config/colors";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+
   return (
     <ImageBackground
       style={styles.background}
@@ -45,7 +46,7 @@ export default function HomeScreen() {
         style={[styles.btn, { marginBottom: 25, paddingHorizontal: 30 }]}
         onPress={() => alert("This feature is not ready.")}
       >
-        <AppText style={styles.text}>Premium</AppText>
+        <AppText style={styles.text}>Donate</AppText>
         <AntDesign
           name="lock"
           size={18}

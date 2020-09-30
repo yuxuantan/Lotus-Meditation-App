@@ -5,12 +5,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  BackHandler,
 } from "react-native";
 
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import CountDown from "react-native-countdown-component";
 import { Easing } from "react-native-reanimated";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { Audio } from "expo-av";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-community/async-storage";
@@ -20,12 +25,237 @@ import AppText from "../components/AppText";
 export default function InProgressScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const [playbackInstance, setPlaybackInstance] = useState(null);
-  const [currCount, setCurrCount] = useState(1);
 
   // number of lotus to be gained if complete
   const [achievements, setAchievements] = useState();
+  // On mount (execute once)
+  const [soundPlaybackInstance, setSoundPlaybackInstance] = useState(null);
+  const [ambientPlaybackInstance, setAmbientPlaybackInstance] = useState(null);
 
+  var currCount = 0;
+  useEffect(() => {
+    // calculate # lotus to be obtained
+    calculateLotus();
+
+    // set audio settings
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
+      playThroughEarpieceAndroid: false,
+    });
+
+    // Keep screen awake
+    activateKeepAwake();
+
+    // load sound obj
+    _loadSoundPlaybackInstance(3);
+
+    // load ambient sound obj
+    _loadAmbientPlaybackInstance();
+  }, []);
+
+  useEffect(() => {
+    if (soundPlaybackInstance != null)
+      soundPlaybackInstance.setOnPlaybackStatusUpdate(_onPlaybackStatusUpdate);
+
+    // this gets called regardless when exit
+    return () => {
+      console.log("return");
+
+      deactivateKeepAwake();
+
+      if (soundPlaybackInstance != null) {
+        soundPlaybackInstance.unloadAsync();
+        setSoundPlaybackInstance(null);
+      }
+    };
+  }, [soundPlaybackInstance]);
+
+  useEffect(() => {
+    return () => {
+      if (ambientPlaybackInstance != null) {
+        ambientPlaybackInstance.unloadAsync();
+        setAmbientPlaybackInstance(null);
+      }
+    };
+  }, [ambientPlaybackInstance]);
+
+  //Same as useEffect. callback, so called whenever state changed
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (ambientPlaybackInstance != null) {
+          endEarly();
+          return true;
+        } else {
+          return false;
+        }
+      };
+
+      BackHandler.addEventListener("hardwareBackPress", onBackPress);
+
+      // on exit, stop playing sounds
+
+      return () => {
+        BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+      };
+    }, [ambientPlaybackInstance, soundPlaybackInstance])
+  );
+
+  const _loadSoundPlaybackInstance = async (count) => {
+    if (soundPlaybackInstance != null) {
+      await soundPlaybackInstance.unloadAsync();
+      setSoundPlaybackInstance(null);
+    }
+    let source = null;
+    switch (route.params.sound) {
+      case "gong":
+        source = require("../assets/sounds/gong_sound.wav");
+        break;
+      case "bell":
+        source = require("../assets/sounds/bell_sound.wav");
+        break;
+      case "bowl":
+        source = require("../assets/sounds/singingbowl_sound.wav");
+        break;
+    }
+    // create playback object
+    const initialStatus = {
+      shouldPlay: false,
+      rate: 1.0,
+      shouldCorrectPitch: true,
+      volume: 1.0,
+      isMuted: false,
+    };
+    const { sound, status } = await Audio.Sound.createAsync(
+      source,
+      initialStatus
+    );
+
+    //  Save the object in global var
+    setSoundPlaybackInstance(sound);
+
+    if (count == 1) {
+      sound.setIsLoopingAsync(false);
+    } else {
+      sound.setIsLoopingAsync(true);
+    }
+    sound.playAsync();
+  };
+
+  var loopNum = 0;
+  const _onPlaybackStatusUpdate = (playbackStatus) => {
+    if (playbackStatus.isLooping && playbackStatus.didJustFinish) {
+      loopNum += 1;
+
+      console.log(loopNum);
+
+      if (loopNum == 2) {
+        soundPlaybackInstance.setIsLoopingAsync(false); //  null!!
+        loopNum = 0;
+      }
+    }
+  };
+  // function to play ambient sound
+  const _loadAmbientPlaybackInstance = async () => {
+    // if existed before, clear everything previously
+    if (ambientPlaybackInstance != null) {
+      await ambientPlaybackInstance.unloadAsync();
+      setAmbientPlaybackInstance(null);
+    }
+    let source = null;
+    switch (route.params.ambient) {
+      case "forest":
+        source = require("../assets/sounds/forest_ambient.mp3");
+        break;
+      case "river":
+        source = require("../assets/sounds/river_ambient.mp3");
+        break;
+      case "city":
+        source = require("../assets/sounds/city_ambient.mp3");
+        break;
+      case "space":
+        source = require("../assets/sounds/space_ambient.mp3");
+        break;
+      case "rain":
+        source = require("../assets/sounds/rain_ambient.mp3");
+        break;
+      case "off":
+        source = null;
+        break;
+    }
+
+    if (source != null) {
+      const initialStatus = {
+        shouldPlay: true,
+        rate: 1.0,
+        shouldCorrectPitch: true,
+        volume: 1.0,
+        isMuted: false,
+      };
+
+      const { sound, status } = await Audio.Sound.createAsync(
+        source,
+        initialStatus
+      );
+      sound.playAsync();
+      setAmbientPlaybackInstance(sound);
+    }
+  };
+
+  // Function when end early is pressed
+  const endEarly = () => {
+    return Alert.alert(
+      "Confirm choice",
+      "Are you sure you want to end the session early? Session will not be counted",
+      [
+        {
+          text: "No",
+          // onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: () => {
+            // navigation.navigate("Home"); // ** THIS MEANS THIS VIEW IS NOT DISMOUNTED
+            navigation.pop(1);
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  // Function when finished session
+  const finishAlert = () => {
+    // update db
+    updateAchievements();
+
+    // play sound 3x to signal end session
+
+    _loadSoundPlaybackInstance(3);
+    // show alert and populate with # lotus
+    return Alert.alert(
+      "Congratulations!",
+      "You have completed the session and obtained " +
+        achievements.numLotus +
+        " lotus!",
+      [
+        {
+          text: "Ok",
+          onPress: () => {
+            navigation.pop(2);
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  // calc days between dates
   function daysBetween(first, second) {
     // Copy date parts of the timestamps, discarding the time parts.
     var one = new Date(first.getFullYear(), first.getMonth(), first.getDate());
@@ -44,6 +274,7 @@ export default function InProgressScreen() {
     return Math.floor(days);
   }
 
+  // change date to str
   const dateToStr = (date) => {
     var d = new Date(date),
       month = "" + (d.getMonth() + 1),
@@ -54,6 +285,8 @@ export default function InProgressScreen() {
     if (day.length < 2) day = "0" + day;
     return [year, month, day].join("-");
   };
+
+  // update db
   const updateAchievements = async () => {
     // get today's date
     var date = new Date();
@@ -147,7 +380,6 @@ export default function InProgressScreen() {
     } catch (e) {
       alert(e);
     }
-
     // update last date in db
     // * note: last code to run! check date before updating it in db
     try {
@@ -156,7 +388,6 @@ export default function InProgressScreen() {
       alert(e);
     }
   };
-
   // calculate lotus to be obtained on finish
   const calculateLotus = () => {
     switch (route.params.minute) {
@@ -178,139 +409,6 @@ export default function InProgressScreen() {
     }
   };
 
-  // On mount (execute once)
-  useEffect(() => {
-    // calculate # lotus to be obtained
-    calculateLotus();
-
-    // set audio settings
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
-      playThroughEarpieceAndroid: false,
-    });
-
-    // Keep screen awake
-    activateKeepAwake();
-
-    // play sound 3x to signal start
-    let i = 0;
-    _loadNewPlaybackInstance();
-    const interval = setInterval(() => {
-      i++;
-      if (i > 2) {
-        clearInterval(interval);
-      } else {
-        _loadNewPlaybackInstance();
-      }
-    }, 5000);
-
-    // on exit, stop playing sounds
-    return () => clearInterval(interval);
-  }, []);
-
-  // function to play sound
-  const _loadNewPlaybackInstance = async () => {
-    // if existed before, clear everything previously
-    if (playbackInstance != null) {
-      await playbackInstance.unloadAsync();
-      setPlaybackInstance(null);
-    }
-    let source = require("../assets/sounds/gong_sound.wav");
-    switch (route.params.sound) {
-      case "gong":
-        source = require("../assets/sounds/gong_sound.wav");
-        break;
-      case "bell":
-        source = require("../assets/sounds/bell_sound.wav");
-        break;
-      case "bowl":
-        source = require("../assets/sounds/singingbowl_sound.wav");
-        break;
-    }
-
-    const initialStatus = {
-      shouldPlay: true,
-      rate: 1.0,
-      shouldCorrectPitch: true,
-      volume: 1.0,
-      isMuted: false,
-    };
-    const { sound, status } = await Audio.Sound.createAsync(
-      source,
-      initialStatus
-    );
-    //  Save the object in state hook
-    setPlaybackInstance(sound);
-
-    sound.playAsync();
-  };
-
-  // Function when end early is pressed
-  const endEarly = () => {
-    return Alert.alert(
-      "Confirm choice",
-      "Are you sure you want to end the session?",
-      [
-        {
-          text: "No",
-          // onPress: () => console.log("Cancel Pressed"),
-          style: "cancel",
-        },
-        {
-          text: "Yes",
-          onPress: () => {
-            if (playbackInstance != null) playbackInstance.unloadAsync();
-            deactivateKeepAwake();
-            navigation.navigate("Home");
-          },
-        },
-      ],
-      { cancelable: false }
-    );
-  };
-
-  // Function when finished session
-  const finishAlert = () => {
-    // update db
-    updateAchievements();
-
-    // play sound 3x to signal end session
-    _loadNewPlaybackInstance();
-    let i = 0;
-    const interval = setInterval(() => {
-      i++;
-      if (i > 2) {
-        clearInterval(interval);
-      } else {
-        _loadNewPlaybackInstance();
-      }
-    }, 5000);
-
-    // show alert and populate with # lotus
-    return Alert.alert(
-      "Congratulations!",
-      "You have completed the session and obtained " +
-        achievements.numLotus +
-        " lotus!",
-      [
-        {
-          text: "Ok",
-          onPress: () => {
-            if (playbackInstance != null) playbackInstance.unloadAsync();
-            clearInterval(interval);
-            deactivateKeepAwake();
-            navigation.navigate("Home");
-          },
-        },
-      ],
-      { cancelable: false }
-    );
-  };
-
   // ui
   return (
     <ImageBackground
@@ -329,12 +427,14 @@ export default function InProgressScreen() {
           timeLabels={{}}
           digitStyle={{ backgroundColor: "white" }}
           onChange={() => {
-            setCurrCount(currCount + 1);
+            currCount += 1;
             if (
               route.params.interval != "off" &&
               currCount % (Number(route.params.interval) * 60) == 0
             ) {
-              _loadNewPlaybackInstance();
+              // soundPlaybackInstance.playAsync(); // is not refreshed, because UI. must use hook if use AI
+              // TO FIX - finish alert not used either. so I need to use hook
+              _loadSoundPlaybackInstance(1);
             }
           }}
           showSeparator
@@ -349,7 +449,23 @@ export default function InProgressScreen() {
           backgroundColor="#00000090"
           style={styles.progressCircle}
           rotation={180}
+
+          // lineCap="round"
         />
+
+        {/* Prep time */}
+        {/* <AnimatedCircularProgress
+          easing={Easing.linear}
+          duration={route.params.prepTime * 1000}
+          size={220}
+          width={10}
+          fill={100}
+          tintColor="white"
+          backgroundColor="lightblue"
+          style={styles.progressCircle}
+          rotation={180}
+          onAnimationComplete={() => soundPlaybackInstance.playAsync()}
+        /> */}
       </View>
 
       <TouchableOpacity style={styles.btn} onPress={() => endEarly()}>
@@ -357,9 +473,9 @@ export default function InProgressScreen() {
       </TouchableOpacity>
 
       {/* FOR TESTING ONLY  - simulate finish*/}
-      {/* <TouchableOpacity style={styles.btn} onPress={() => finishAlert()}>
+      <TouchableOpacity style={styles.btn} onPress={() => finishAlert()}>
         <AppText style={styles.text}>Simulate Finish</AppText>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
     </ImageBackground>
   );
 }
